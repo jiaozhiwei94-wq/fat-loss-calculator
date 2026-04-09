@@ -44,9 +44,10 @@ const BMIGauge = ({ bmi }: { bmi: number }) => {
     }
   };
 
-  const percentage = getPercentage(bmi);
+  const safeBmi = isNaN(bmi) || bmi <= 0 ? 0 : bmi;
+  const percentage = getPercentage(safeBmi);
   const rotation = percentage * 180 - 180;
-  const status = bmi < 18.5 ? '体重过低' : bmi < 24 ? '体重正常' : bmi < 28 ? '超重' : '肥胖';
+  const status = safeBmi < 18.5 ? '体重过低' : safeBmi < 24 ? '体重正常' : safeBmi < 28 ? '超重' : '肥胖';
 
   // Total arc length for radius 44 is PI * 44 = 138.23
   // Each segment is 138.23 / 4 = 34.56
@@ -75,7 +76,7 @@ const BMIGauge = ({ bmi }: { bmi: number }) => {
             <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[10px] border-b-brand" />
           </div>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mb-0.5">BMI</p>
-          <p className="text-4xl font-mono font-bold text-slate-900">{bmi.toFixed(1)}</p>
+          <p className="text-4xl font-mono font-bold text-slate-900">{safeBmi.toFixed(1)}</p>
           <p className="text-[10px] font-bold text-brand uppercase mt-0.5">{status}</p>
         </div>
       </div>
@@ -138,41 +139,76 @@ const ActivityInfoTooltip = () => {
   );
 };
 
-const InputField = ({ label, value, onChange, unit, type = "number", placeholder, min, max }: any) => (
-  <div className="space-y-1.5">
-    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider pl-1">{label}</label>
-    <div className="relative group">
-      <input 
-        type={type}
-        placeholder={placeholder}
-        min={min}
-        max={max}
-        className="w-full bg-white border border-slate-200 px-4 py-3 rounded-xl text-sm font-medium focus:ring-2 focus:ring-brand/10 focus:border-brand transition-all outline-none"
-        value={value}
-        onChange={e => {
-          let val: any = type === "number" ? Number(e.target.value) : e.target.value;
-          if (type === "number" && max !== undefined && val > max) val = max;
-          onChange(val);
-        }}
-      />
-      {unit && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-mono">{unit}</span>}
+const InputField = ({ label, value, onChange, unit, type = "number", placeholder, min, max, step }: any) => {
+  // 处理显示值：如果是0或undefined，显示为空字符串
+  const displayValue = value === 0 || value === undefined || value === null ? '' : String(value);
+  
+  return (
+    <div className="space-y-1.5">
+      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider pl-1">{label}</label>
+      <div className="relative group">
+        <input 
+          type={type}
+          placeholder={placeholder}
+          min={min}
+          max={max}
+          step={step}
+          className="w-full bg-white border border-slate-200 px-4 py-3 rounded-xl text-sm font-medium focus:ring-2 focus:ring-brand/10 focus:border-brand transition-all outline-none"
+          value={displayValue}
+          onChange={e => {
+            const inputValue = e.target.value;
+            
+            // 如果输入为空，传递0
+            if (inputValue === '') {
+              onChange(0);
+              return;
+            }
+            
+            // 去除前导0（保留单个0）
+            let cleanedValue = inputValue.replace(/^0+(?=\d)/, '');
+            
+            // 转换为数字
+            let val: any = type === "number" ? Number(cleanedValue) : cleanedValue;
+            
+            // 检查最大值限制
+            if (type === "number" && max !== undefined && val > max) val = max;
+            
+            // 检查最小值限制
+            if (type === "number" && min !== undefined && val < min) val = min;
+            
+            // 根据标签处理精度
+            if (type === "number") {
+              if (label === "年龄" || label === "身高") {
+                // 年龄和身高取整数
+                val = Math.floor(val);
+              } else if (label === "当前体重" || label === "目标体重" || label === "当前体脂" || label === "目标体脂") {
+                // 体重和体脂精确到一位小数
+                val = parseFloat(val.toFixed(1));
+              }
+            }
+            
+            onChange(val);
+          }}
+        />
+        {unit && <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-mono">{unit}</span>}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 export default function App() {
   const [userInfo, setUserInfo] = useState<UserInfo>({
     name: '',
     gender: 'male',
-    age: 25,
-    height: 175,
-    weight: 70,
+    age: 0,
+    height: 0,
+    weight: 0,
     activityMultiplier: 1.2,
   });
 
   const [goal, setGoal] = useState<FatLossGoal>({
-    currentBodyFat: 20,
-    targetBodyFat: 15,
+    currentBodyFat: 0,
+    targetBodyFat: 0,
     planLevel: 'standard',
     manualDays: 1,
   });
@@ -180,14 +216,23 @@ export default function App() {
   const results = useMemo((): CalculationResult => {
     const { gender, age, height, weight, activityMultiplier } = userInfo;
     const { currentBodyFat, targetBodyFat, manualDays } = goal;
-    const bmi = weight / Math.pow(height / 100, 2);
+    
+    // 处理空值情况，避免除以0
+    const safeHeight = height || 1;
+    const safeWeight = weight || 0;
+    const safeAge = age || 0;
+    const safeCurrentBodyFat = currentBodyFat || 0;
+    const safeTargetBodyFat = targetBodyFat || 0;
+    
+    const bmi = safeHeight > 0 ? safeWeight / Math.pow(safeHeight / 100, 2) : 0;
     let bmr = gender === 'male' 
-      ? 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age)
-      : 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+      ? 88.362 + (13.397 * safeWeight) + (4.799 * safeHeight) - (5.677 * safeAge)
+      : 447.593 + (9.247 * safeWeight) + (3.098 * safeHeight) - (4.330 * safeAge);
     const tdee = bmr * activityMultiplier;
-    const leanBodyMass = weight * (1 - currentBodyFat / 100);
-    const targetWeight = leanBodyMass / (1 - targetBodyFat / 100);
-    const weightToLose = Math.max(0, weight - targetWeight);
+    const leanBodyMass = safeWeight * (1 - safeCurrentBodyFat / 100);
+    const targetBodyFatDecimal = safeTargetBodyFat > 0 && safeTargetBodyFat < 100 ? safeTargetBodyFat : 1;
+    const targetWeight = leanBodyMass / (1 - targetBodyFatDecimal / 100);
+    const weightToLose = Math.max(0, safeWeight - targetWeight);
     const totalCalorieDeficit = weightToLose * 7700;
     
     const dailyDeficit = (manualDays && manualDays > 0) ? (totalCalorieDeficit / manualDays) : 0;
@@ -239,9 +284,14 @@ export default function App() {
   }, [userInfo, goal]);
 
   const applyPlanPreset = (planId: string, deficit: number) => {
-    const leanBodyMass = userInfo.weight * (1 - goal.currentBodyFat / 100);
-    const targetWeight = leanBodyMass / (1 - goal.targetBodyFat / 100);
-    const weightToLose = Math.max(0, userInfo.weight - targetWeight);
+    const safeWeight = userInfo.weight || 0;
+    const safeCurrentBodyFat = goal.currentBodyFat || 0;
+    const safeTargetBodyFat = goal.targetBodyFat || 0;
+    
+    const leanBodyMass = safeWeight * (1 - safeCurrentBodyFat / 100);
+    const targetBodyFatDecimal = safeTargetBodyFat > 0 && safeTargetBodyFat < 100 ? safeTargetBodyFat : 1;
+    const targetWeight = leanBodyMass / (1 - targetBodyFatDecimal / 100);
+    const weightToLose = Math.max(0, safeWeight - targetWeight);
     const totalCalorieDeficit = weightToLose * 7700;
     
     // Round to nearest integer as requested
@@ -270,7 +320,7 @@ export default function App() {
                 animate={{ opacity: 1, y: 0 }}
                 className="text-8xl md:text-9xl font-mono font-black tracking-tighter text-ink"
               >
-                {Math.round(results.dailyCalorieIntake)}
+                {isNaN(results.dailyCalorieIntake) || results.dailyCalorieIntake <= 0 ? 0 : Math.round(results.dailyCalorieIntake)}
               </motion.span>
               <span className="text-2xl md:text-3xl font-mono font-medium text-slate-300">kcal</span>
             </div>
@@ -282,15 +332,15 @@ export default function App() {
           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 pt-4">
             <div className="text-center">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">每日缺口</p>
-              <p className="text-xl font-mono font-bold text-ink">-{Math.round(results.dailyDeficit)} <span className="text-xs font-normal text-slate-300">kcal</span></p>
+              <p className="text-xl font-mono font-bold text-ink">-{isNaN(results.dailyDeficit) || results.dailyDeficit <= 0 ? 0 : Math.round(results.dailyDeficit)} <span className="text-xs font-normal text-slate-300">kcal</span></p>
             </div>
             <div className="text-center">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">预计用时</p>
-              <p className="text-xl font-mono font-bold text-ink">{results.plannedDays} <span className="text-xs font-normal text-slate-300">天</span></p>
+              <p className="text-xl font-mono font-bold text-ink">{isNaN(results.plannedDays) || results.plannedDays <= 0 ? 0 : results.plannedDays} <span className="text-xs font-normal text-slate-300">天</span></p>
             </div>
             <div className="text-center">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">目标体重</p>
-              <p className="text-xl font-mono font-bold text-brand">{results.targetWeight.toFixed(1)} <span className="text-xs font-normal text-slate-300">kg</span></p>
+              <p className="text-xl font-mono font-bold text-brand">{isNaN(results.targetWeight) || results.targetWeight <= 0 ? 0 : results.targetWeight.toFixed(1)} <span className="text-xs font-normal text-slate-300">kg</span></p>
             </div>
           </div>
         </div>
@@ -328,12 +378,12 @@ export default function App() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <InputField label="年龄" value={userInfo.age} unit="岁" onChange={(v: number) => setUserInfo({...userInfo, age: v})} />
-                  <InputField label="身高" value={userInfo.height} unit="cm" onChange={(v: number) => setUserInfo({...userInfo, height: v})} />
+                  <InputField label="年龄" value={userInfo.age} unit="岁" onChange={(v: number) => setUserInfo({...userInfo, age: v})} min={0} max={99} step="1" />
+                  <InputField label="身高" value={userInfo.height} unit="cm" onChange={(v: number) => setUserInfo({...userInfo, height: v})} min={0} max={300} step="1" />
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <InputField label="当前体重" value={userInfo.weight} unit="kg" onChange={(v: number) => setUserInfo({...userInfo, weight: v})} />
+                  <InputField label="当前体重" value={userInfo.weight} unit="kg" onChange={(v: number) => setUserInfo({...userInfo, weight: v})} min={0} step="0.1" />
                   <div className="space-y-1.5">
                     <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider pl-1">
                       日常活动量
@@ -358,11 +408,11 @@ export default function App() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="text-center">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">基础代谢 (BMR)</p>
-                      <p className="text-sm font-mono font-bold text-ink">{Math.round(results.bmr)} <span className="text-[10px] font-normal text-slate-400">kcal</span></p>
+                      <p className="text-sm font-mono font-bold text-ink">{isNaN(results.bmr) || results.bmr <= 0 ? 0 : Math.round(results.bmr)} <span className="text-[10px] font-normal text-slate-400">kcal</span></p>
                     </div>
                     <div className="text-center">
                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">每日总消耗 (TDEE)</p>
-                      <p className="text-sm font-mono font-bold text-ink">{Math.round(results.tdee)} <span className="text-[10px] font-normal text-slate-400">kcal</span></p>
+                      <p className="text-sm font-mono font-bold text-ink">{isNaN(results.tdee) || results.tdee <= 0 ? 0 : Math.round(results.tdee)} <span className="text-[10px] font-normal text-slate-400">kcal</span></p>
                     </div>
                   </div>
                   <BMIGauge bmi={results.bmi} />
@@ -387,18 +437,18 @@ export default function App() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
                   <div className="md:col-span-1 space-y-8">
                     <div className="space-y-6">
-                      <InputField label="当前体脂" value={goal.currentBodyFat} unit="%" onChange={(v: number) => setGoal({...goal, currentBodyFat: v})} />
-                      <InputField label="目标体脂" value={goal.targetBodyFat} unit="%" onChange={(v: number) => setGoal({...goal, targetBodyFat: v})} />
+                      <InputField label="当前体脂" value={goal.currentBodyFat} unit="%" onChange={(v: number) => setGoal({...goal, currentBodyFat: v})} min={0} max={100} step="0.1" />
+                      <InputField label="目标体脂" value={goal.targetBodyFat} unit="%" onChange={(v: number) => setGoal({...goal, targetBodyFat: v})} min={0} max={100} step="0.1" />
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-50">
                       <div className="text-center">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">当前瘦体重</p>
-                        <p className="text-sm font-mono font-bold text-ink">{results.leanBodyMass.toFixed(1)} <span className="text-[10px] font-normal text-slate-400">kg</span></p>
+                        <p className="text-sm font-mono font-bold text-ink">{isNaN(results.leanBodyMass) || results.leanBodyMass <= 0 ? 0 : results.leanBodyMass.toFixed(1)} <span className="text-[10px] font-normal text-slate-400">kg</span></p>
                       </div>
                       <div className="text-center">
                         <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">需减脂肪量</p>
-                        <p className="text-sm font-mono font-bold text-orange-500">{results.weightToLose.toFixed(1)} <span className="text-[10px] font-normal text-slate-400">kg</span></p>
+                        <p className="text-sm font-mono font-bold text-orange-500">{isNaN(results.weightToLose) || results.weightToLose <= 0 ? 0 : results.weightToLose.toFixed(1)} <span className="text-[10px] font-normal text-slate-400">kg</span></p>
                       </div>
                     </div>
                   </div>
