@@ -481,12 +481,11 @@ export default function App() {
                       label="计划用时天数" 
                       value={goal.manualDays} 
                       unit="天" 
-                      min={1}
                       max={999}
                       step="1"
                       onChange={(v: number) => {
-                        // 确保值至少为1
-                        const num = Math.min(999, Math.max(1, v));
+                        // 不设置最小值，允许为空（值为0）
+                        const num = Math.min(999, v);
                         setGoal({...goal, manualDays: num, planLevel: 'manual'});
                       }} 
                     />
