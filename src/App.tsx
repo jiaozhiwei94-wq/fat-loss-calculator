@@ -206,11 +206,11 @@ export default function App() {
     activityMultiplier: 1.2,
   });
 
-  const [goal, setGoal] = useState<FatLossGoal>({
+  const [goal, setGoal] = useState<Goal>({
     currentBodyFat: 0,
     targetBodyFat: 0,
     planLevel: 'standard',
-    manualDays: 1,
+    manualDays: 0,
   });
 
   const results = useMemo((): CalculationResult => {
@@ -237,8 +237,8 @@ export default function App() {
     const weightToLose = hasValidInput ? Math.max(0, safeWeight - targetWeight) : 0;
     const totalCalorieDeficit = weightToLose * 7700;
     
-    const dailyDeficit = hasValidInput && (manualDays && manualDays > 0) ? (totalCalorieDeficit / manualDays) : 0;
-    const plannedDays = hasValidInput ? (manualDays || 0) : 0;
+    const dailyDeficit = hasValidInput && manualDays > 0 ? (totalCalorieDeficit / manualDays) : 0;
+    const plannedDays = hasValidInput ? (manualDays > 0 ? manualDays : 0) : 0;
     
     const dailyCalorieIntake = hasValidInput ? (tdee - dailyDeficit) : 0;
 
@@ -479,12 +479,14 @@ export default function App() {
                   <div className="space-y-4">
                     <InputField 
                       label="计划用时天数" 
-                      value={goal.manualDays === null ? '' : goal.manualDays} 
+                      value={goal.manualDays} 
                       unit="天" 
                       min={1}
                       max={999}
-                      onChange={(v: number | string) => {
-                        const num = v === '' ? null : Math.min(999, Math.max(1, Math.round(Number(v))));
+                      step="1"
+                      onChange={(v: number) => {
+                        // 确保值至少为1
+                        const num = Math.min(999, Math.max(1, v));
                         setGoal({...goal, manualDays: num, planLevel: 'manual'});
                       }} 
                     />
