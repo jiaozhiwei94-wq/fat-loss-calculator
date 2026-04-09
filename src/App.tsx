@@ -224,21 +224,23 @@ export default function App() {
     const safeCurrentBodyFat = currentBodyFat || 0;
     const safeTargetBodyFat = targetBodyFat || 0;
     
-    const bmi = safeHeight > 0 ? safeWeight / Math.pow(safeHeight / 100, 2) : 0;
-    let bmr = gender === 'male' 
+    // 当关键输入为0时，BMR和TDEE显示为0
+    const hasValidInput = safeAge > 0 && safeHeight > 0 && safeWeight > 0;
+    const bmi = hasValidInput && safeHeight > 0 ? safeWeight / Math.pow(safeHeight / 100, 2) : 0;
+    let bmr = hasValidInput ? (gender === 'male' 
       ? 88.362 + (13.397 * safeWeight) + (4.799 * safeHeight) - (5.677 * safeAge)
-      : 447.593 + (9.247 * safeWeight) + (3.098 * safeHeight) - (4.330 * safeAge);
-    const tdee = bmr * activityMultiplier;
-    const leanBodyMass = safeWeight * (1 - safeCurrentBodyFat / 100);
+      : 447.593 + (9.247 * safeWeight) + (3.098 * safeHeight) - (4.330 * safeAge)) : 0;
+    const tdee = hasValidInput ? bmr * activityMultiplier : 0;
+    const leanBodyMass = hasValidInput ? safeWeight * (1 - safeCurrentBodyFat / 100) : 0;
     const targetBodyFatDecimal = safeTargetBodyFat > 0 && safeTargetBodyFat < 100 ? safeTargetBodyFat : 1;
-    const targetWeight = leanBodyMass / (1 - targetBodyFatDecimal / 100);
-    const weightToLose = Math.max(0, safeWeight - targetWeight);
+    const targetWeight = hasValidInput ? leanBodyMass / (1 - targetBodyFatDecimal / 100) : 0;
+    const weightToLose = hasValidInput ? Math.max(0, safeWeight - targetWeight) : 0;
     const totalCalorieDeficit = weightToLose * 7700;
     
-    const dailyDeficit = (manualDays && manualDays > 0) ? (totalCalorieDeficit / manualDays) : 0;
-    const plannedDays = manualDays || 0;
+    const dailyDeficit = hasValidInput && (manualDays && manualDays > 0) ? (totalCalorieDeficit / manualDays) : 0;
+    const plannedDays = hasValidInput ? (manualDays || 0) : 0;
     
-    const dailyCalorieIntake = tdee - dailyDeficit;
+    const dailyCalorieIntake = hasValidInput ? (tdee - dailyDeficit) : 0;
 
     // Determine evaluation based on daily deficit
     let evaluation = {
