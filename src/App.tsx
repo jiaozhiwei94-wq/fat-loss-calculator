@@ -206,7 +206,7 @@ export default function App() {
     activityMultiplier: 1.2,
   });
 
-  const [goal, setGoal] = useState<Goal>({
+  const [goal, setGoal] = useState<FatLossGoal>({
     currentBodyFat: 0,
     targetBodyFat: 0,
     planLevel: 'standard',
@@ -475,14 +475,32 @@ export default function App() {
                       <InputField label="目标体脂" value={goal.targetBodyFat} unit="%" onChange={(v: number) => setGoal({...goal, targetBodyFat: v})} min={0} max={100} step="0.1" />
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4 pt-6 border-t border-slate-50">
+                    <div className="pt-6 border-t border-slate-50">
                       <div className="text-center">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">当前瘦体重</p>
-                        <p className="text-sm font-mono font-bold text-ink">{isNaN(results.leanBodyMass) || results.leanBodyMass <= 0 ? 0 : results.leanBodyMass.toFixed(1)} <span className="text-[10px] font-normal text-slate-400">kg</span></p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">当前瘦体重</p>
+                        <p className="text-xl font-mono font-bold text-ink">{isNaN(results.leanBodyMass) || results.leanBodyMass <= 0 ? 0 : results.leanBodyMass.toFixed(1)} <span className="text-sm font-normal text-slate-400">kg</span></p>
                       </div>
-                      <div className="text-center">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">需减脂肪量</p>
-                        <p className="text-sm font-mono font-bold text-orange-500">{isNaN(results.weightToLose) || results.weightToLose <= 0 ? 0 : results.weightToLose.toFixed(1)} <span className="text-[10px] font-normal text-slate-400">kg</span></p>
+                    </div>
+                    
+                    {/* 脂肪减量卡片板块 */}
+                    <div className="mt-8 p-6 bg-green-50 rounded-2xl border border-green-100">
+                      <p className="text-[10px] font-bold text-green-600 uppercase tracking-wider mb-4">预计需要减掉脂肪</p>
+                      <div className="space-y-4">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-3xl font-mono font-bold text-green-600">{isNaN(results.weightToLose) || results.weightToLose <= 0 ? 0 : results.weightToLose.toFixed(1)}</span>
+                          <span className="text-sm font-medium text-green-600">kg</span>
+                        </div>
+                        <div className="space-y-2">
+                          <p className="text-sm text-green-700">约 {isNaN(results.totalCalorieDeficit) || results.totalCalorieDeficit <= 0 ? 0 : Math.round(results.totalCalorieDeficit)} kcal</p>
+                          <p className="text-sm text-green-700 flex items-center gap-1">
+                            <span>🍔</span>
+                            相当于 {isNaN(results.totalCalorieDeficit) || results.totalCalorieDeficit <= 0 ? 0 : Math.round(results.totalCalorieDeficit / 250)} 个汉堡
+                          </p>
+                          <p className="text-sm text-green-700 flex items-center gap-1">
+                            <span>🏃</span>
+                            或慢跑 {isNaN(results.totalCalorieDeficit) || results.totalCalorieDeficit <= 0 ? 0 : Math.round(results.totalCalorieDeficit / 1000 * 60)} 小时
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
