@@ -620,7 +620,7 @@ export default function App() {
             <span className="flex items-center gap-1.5"><Info className="w-3 h-3" /> 科学计算</span>
             <span className="flex items-center gap-1.5"><Info className="w-3 h-3" /> 隐私保护</span>
           </div>
-          <p className="text-[10px] font-medium text-slate-300">© 2026 LEANCALC · 极简科学减脂工具</p>
+          <p className="text-[10px] font-medium text-slate-300">© 2026 Rock的减脂小工具</p>
         </div>
       </main>
     </div>
