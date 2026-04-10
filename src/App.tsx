@@ -491,14 +491,14 @@ export default function App() {
                           <span className="text-sm font-medium text-green-600">kg</span>
                         </div>
                         <div className="space-y-2">
-                          <p className="text-sm text-green-700">约 {isNaN(results.totalCalorieDeficit) || results.totalCalorieDeficit <= 0 ? 0 : Math.round(results.totalCalorieDeficit)} kcal</p>
+                          <p className="text-sm text-green-700">约 <span className="font-mono font-bold text-green-600">{isNaN(results.totalCalorieDeficit) || results.totalCalorieDeficit <= 0 ? 0 : Math.round(results.totalCalorieDeficit)}</span> kcal</p>
                           <p className="text-sm text-green-700 flex items-center gap-1">
                             <span>🍔</span>
-                            相当于 {isNaN(results.totalCalorieDeficit) || results.totalCalorieDeficit <= 0 ? 0 : Math.round(results.totalCalorieDeficit / 250)} 个汉堡
+                            相当于 <span className="font-mono font-bold text-green-600">{isNaN(results.totalCalorieDeficit) || results.totalCalorieDeficit <= 0 ? 0 : Math.round(results.totalCalorieDeficit / 250)}</span> 个汉堡
                           </p>
                           <p className="text-sm text-green-700 flex items-center gap-1">
                             <span>🏃</span>
-                            或慢跑 {isNaN(results.totalCalorieDeficit) || results.totalCalorieDeficit <= 0 ? 0 : Math.round(results.totalCalorieDeficit / 1000 * 60)} 小时
+                            或慢跑 <span className="font-mono font-bold text-green-600">{isNaN(results.totalCalorieDeficit) || results.totalCalorieDeficit <= 0 ? 0 : Math.round(results.totalCalorieDeficit / 1000 * 60)}</span> 小时
                           </p>
                         </div>
                       </div>
