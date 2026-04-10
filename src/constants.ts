@@ -2,8 +2,8 @@ import { Gender } from './types';
 
 export const ACTIVITY_LEVELS = [
   { value: 1.2, label: '久坐/极低活动', description: '办公室工作，几乎无运动（每日步数 < 5000）' },
-  { value: 1.375, label: '轻度活动', description: '日常轻度运动（如每日散步 30 分钟 + 家务）' },
-  { value: 1.55, label: '中度活动', description: '每日 30-60 分钟中等强度运动（如快走、慢跑）' },
+  { value: 1.375, label: '轻度活动', description: '日常轻度运动（每周运动1-3次、或每日散步30分钟+家务）' },
+  { value: 1.55, label: '中度活动', description: '每周3-4次高强度运动（如拳击、网球）或每日30-60分钟中等强度运动（如快走、慢跑）' },
   { value: 1.725, label: '重度活动', description: '高强度运动或体力劳动（如健身 2 小时/天、搬运工）' },
 ];
 
