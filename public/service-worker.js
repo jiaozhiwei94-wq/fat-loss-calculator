@@ -1,5 +1,5 @@
 // 缓存名称
-const CACHE_NAME = 'rock-fat-loss-calculator-v1';
+const CACHE_NAME = 'rock-fat-loss-calculator-v2';
 
 // 需要缓存的静态资源列表
 const STATIC_ASSETS = [
