@@ -312,17 +312,22 @@ export default function App() {
     <div className="min-h-screen bg-[#F9FAFB] selection:bg-brand/20">
       {/* 图片查看模态框 */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="relative max-w-4xl max-h-[90vh]">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+          onClick={() => setShowModal(false)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh]"
+            onClick={(e) => e.stopPropagation()} // 阻止事件冒泡，避免点击图片关闭
+          >
             <img 
               src={modalImage}
               alt="体脂参考大图"
-              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg cursor-pointer hover:opacity-95 transition-opacity"
               onError={(e) => {
                 // Fallback to a placeholder if the image is missing
                 (e.target as HTMLImageElement).src = `https://picsum.photos/seed/bodyfat-large/800/1000?blur=2`;
               }}
               referrerPolicy="no-referrer"
+              onClick={() => setShowModal(false)} // 点击图片关闭
             />
             <button 
               className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-2 text-white hover:bg-white/30 transition-colors"
