@@ -213,6 +213,10 @@ export default function App() {
     manualDays: 0,
   });
 
+  // 模态框状态
+  const [showModal, setShowModal] = useState(false);
+  const [modalImage, setModalImage] = useState('');
+
   const results = useMemo((): CalculationResult => {
     const { gender, age, height, weight, activityMultiplier } = userInfo;
     const { currentBodyFat, targetBodyFat, manualDays } = goal;
@@ -306,6 +310,29 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] selection:bg-brand/20">
+      {/* 图片查看模态框 */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="relative max-w-4xl max-h-[90vh]">
+            <img 
+              src={modalImage}
+              alt="体脂参考大图"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+              onError={(e) => {
+                // Fallback to a placeholder if the image is missing
+                (e.target as HTMLImageElement).src = `https://picsum.photos/seed/bodyfat-large/800/1000?blur=2`;
+              }}
+              referrerPolicy="no-referrer"
+            />
+            <button 
+              className="absolute top-4 right-4 bg-white/20 backdrop-blur-sm rounded-full p-2 text-white hover:bg-white/30 transition-colors"
+              onClick={() => setShowModal(false)}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
       {/* Hero Result Section */}
       <section className="bg-white border-b border-slate-100 pt-16 pb-20">
         <div className="max-w-4xl mx-auto px-6 text-center space-y-8">
@@ -456,7 +483,13 @@ export default function App() {
                   </div>
                   
                   <div className="md:col-span-2 bg-slate-50 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 border border-slate-100/50">
-                    <div className="w-full max-w-[320px] rounded-xl overflow-hidden bg-white shadow-sm border border-slate-100">
+                    <div className="w-full max-w-[320px] rounded-xl overflow-hidden bg-white shadow-sm border border-slate-100 cursor-pointer hover:shadow-md transition-shadow"
+                      onClick={() => {
+                        const imageSrc = userInfo.gender === 'male' ? '/body_fatrate_man.jpg' : '/body_fatrate_woman.jpg';
+                        setModalImage(imageSrc);
+                        setShowModal(true);
+                      }}
+                    >
                       <img 
                         src={userInfo.gender === 'male' ? '/body_fatrate_man.jpg' : '/body_fatrate_woman.jpg'}
                         alt={`${userInfo.gender === 'male' ? '男' : '女'}性体脂参考图`}
