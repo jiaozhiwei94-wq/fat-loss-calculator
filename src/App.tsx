@@ -8,6 +8,7 @@ import {
   Info,
   ArrowRight,
   ChevronDown,
+  ChevronUp,
   Check,
   Zap,
   Target,
@@ -18,6 +19,44 @@ import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
 import { UserInfo, FatLossGoal, CalculationResult, Gender } from './types';
 import { ACTIVITY_LEVELS, PLAN_LEVELS, BODY_FAT_REFERENCES } from './constants';
+import DietDetailsPage from './components/DietDetailsPage';
+import WorkoutDetailsPage from './components/WorkoutDetailsPage';
+
+// 折叠面板组件
+const Collapsible = ({ title, children }: { title: string; children: React.ReactNode }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="border border-slate-100 rounded-2xl overflow-hidden">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex justify-between items-center p-6 bg-slate-50 hover:bg-slate-100 transition-colors"
+      >
+        <p className="text-sm font-bold text-slate-600 uppercase tracking-wider">{title}</p>
+        {isOpen ? (
+          <ChevronUp className="w-4 h-4 text-slate-500" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-slate-500" />
+        )}
+      </button>
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden"
+          >
+            <div className="p-6 bg-white">
+              {children}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
 
 // --- Components ---
 
@@ -197,6 +236,9 @@ const InputField = ({ label, value, onChange, unit, type = "number", placeholder
 };
 
 export default function App() {
+  // 页面状态
+  const [currentPage, setCurrentPage] = useState<'input' | 'result' | 'plan' | 'dietDetails' | 'workoutDetails'>('input');
+  
   const [userInfo, setUserInfo] = useState<UserInfo>({
     name: '',
     gender: 'male',
@@ -338,309 +380,610 @@ export default function App() {
           </div>
         </div>
       )}
-      {/* Hero Result Section */}
-      <section className="bg-white border-b border-slate-100 pt-16 pb-20">
-        <div className="max-w-4xl mx-auto px-6 text-center space-y-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand/5 text-brand rounded-full text-[10px] font-bold uppercase tracking-widest">
-            <Zap className="w-3 h-3" />
-            <span>建议每日摄入热量</span>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex items-baseline justify-center gap-2">
-              <motion.span 
-                key={results.dailyCalorieIntake}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-8xl md:text-9xl font-mono font-black tracking-tighter text-ink"
-              >
-                {isNaN(results.dailyCalorieIntake) || results.dailyCalorieIntake <= 0 ? 0 : Math.round(results.dailyCalorieIntake)}
-              </motion.span>
-              <span className="text-2xl md:text-3xl font-mono font-medium text-slate-300">kcal</span>
-            </div>
-            <p className="text-slate-400 font-medium text-sm md:text-base max-w-md mx-auto leading-relaxed">
-              根据您的身体数据与减脂目标，这是达成目标体型的最佳摄入值。
-            </p>
-          </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-16 pt-4">
-            <div className="text-center">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">每日缺口</p>
-              <p className="text-xl font-mono font-bold text-ink">-{isNaN(results.dailyDeficit) || results.dailyDeficit <= 0 ? 0 : Math.round(results.dailyDeficit)} <span className="text-xs font-normal text-slate-300">kcal</span></p>
+      {/* 第一页：数据输入页 */}
+      {currentPage === 'input' && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="min-h-screen"
+        >
+          {/* 页面头部 */}
+          <header className="bg-white border-b border-slate-100 py-8">
+            <div className="max-w-4xl mx-auto px-6 text-center space-y-4">
+              <h1 className="text-3xl md:text-4xl font-bold text-ink">Rock的减脂小工具</h1>
+              <p className="text-slate-400 text-sm md:text-base max-w-md mx-auto">
+                科学计算减脂计划，帮助您制定合理的减脂目标和饮食计划
+              </p>
             </div>
-            <div className="text-center">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">预计用时</p>
-              <p className="text-xl font-mono font-bold text-ink">{isNaN(results.plannedDays) || results.plannedDays <= 0 ? 0 : results.plannedDays} <span className="text-xs font-normal text-slate-300">天</span></p>
-            </div>
-            <div className="text-center">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">目标体重</p>
-              <p className="text-xl font-mono font-bold text-brand">{isNaN(results.targetWeight) || results.targetWeight <= 0 ? 0 : results.targetWeight.toFixed(1)} <span className="text-xs font-normal text-slate-300">kg</span></p>
-            </div>
-          </div>
-        </div>
-      </section>
+          </header>
 
-      <main className="max-w-4xl mx-auto px-6 -mt-10 pb-24 space-y-12">
-        
-        {/* Input Sections: Stacked vertically for focus */}
-        <div className="space-y-16">
-          
-          {/* Section 1: Basic Info */}
-          <div className="space-y-8">
-            <div className="flex items-center gap-3 px-1">
-              <div className="w-8 h-8 rounded-lg bg-ink text-white flex items-center justify-center">
-                <User className="w-4 h-4" />
+          <main className="max-w-4xl mx-auto px-6 py-10 space-y-12">
+            {/* 身体基础数据 */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 px-1">
+                <div className="w-8 h-8 rounded-lg bg-ink text-white flex items-center justify-center">
+                  <User className="w-4 h-4" />
+                </div>
+                <h2 className="text-sm font-bold uppercase tracking-widest">身体基础数据</h2>
               </div>
-              <h2 className="text-sm font-bold uppercase tracking-widest">身体基础数据</h2>
-            </div>
-            
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-              <div className="max-w-2xl mx-auto space-y-6">
-                <div className="flex p-1 bg-slate-50 rounded-xl">
-                  {(['male', 'female'] as Gender[]).map(g => (
-                    <button
-                      key={g}
-                      onClick={() => setUserInfo({...userInfo, gender: g})}
-                      className={cn(
-                        "flex-1 py-2 text-xs font-bold rounded-lg transition-all",
-                        userInfo.gender === g ? "bg-white text-ink shadow-sm" : "text-slate-400 hover:text-slate-600"
-                      )}
-                    >
-                      {g === 'male' ? '男' : '女'}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <InputField label="年龄" value={userInfo.age} unit="岁" onChange={(v: number) => setUserInfo({...userInfo, age: v})} min={0} max={99} step="1" />
-                  <InputField label="身高" value={userInfo.height} unit="cm" onChange={(v: number) => setUserInfo({...userInfo, height: v})} min={0} max={300} step="1" />
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <InputField label="当前体重" value={userInfo.weight} unit="kg" onChange={(v: number) => setUserInfo({...userInfo, weight: v})} min={0} step="0.1" />
-                  <div className="space-y-1.5">
-                    <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider pl-1">
-                      日常活动量
-                      <ActivityInfoTooltip />
-                    </label>
-                    <div className="relative">
-                      <select 
-                        className="w-full bg-white border border-slate-200 px-4 py-3 rounded-xl text-sm font-medium focus:ring-2 focus:ring-brand/10 focus:border-brand transition-all outline-none appearance-none"
-                        value={userInfo.activityMultiplier}
-                        onChange={e => setUserInfo({...userInfo, activityMultiplier: Number(e.target.value)})}
+              
+              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100">
+                <div className="max-w-2xl mx-auto space-y-6">
+                  <div className="flex p-1 bg-slate-50 rounded-xl">
+                    {(['male', 'female'] as Gender[]).map(g => (
+                      <button
+                        key={g}
+                        onClick={() => setUserInfo({...userInfo, gender: g})}
+                        className={cn(
+                          "flex-1 py-2 text-xs font-bold rounded-lg transition-all",
+                          userInfo.gender === g ? "bg-white text-ink shadow-sm" : "text-slate-400 hover:text-slate-600"
+                        )}
                       >
-                        {ACTIVITY_LEVELS.map(level => (
-                          <option key={level.value} value={level.value}>{level.label}</option>
-                        ))}
-                      </select>
-                      <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                        {g === 'male' ? '男' : '女'}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <InputField label="年龄" value={userInfo.age} unit="岁" onChange={(v: number) => setUserInfo({...userInfo, age: v})} min={0} max={99} step="1" />
+                    <InputField label="身高" value={userInfo.height} unit="cm" onChange={(v: number) => setUserInfo({...userInfo, height: v})} min={0} max={300} step="1" />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <InputField label="当前体重" value={userInfo.weight} unit="kg" onChange={(v: number) => setUserInfo({...userInfo, weight: v})} min={0} step="0.1" />
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-bold text-slate-400 uppercase tracking-wider pl-1">
+                        日常活动量
+                        <ActivityInfoTooltip />
+                      </label>
+                      <div className="relative">
+                        <select 
+                          className="w-full bg-white border border-slate-200 px-4 py-3 rounded-xl text-sm font-medium focus:ring-2 focus:ring-brand/10 focus:border-brand transition-all outline-none appearance-none"
+                          value={userInfo.activityMultiplier}
+                          onChange={e => setUserInfo({...userInfo, activityMultiplier: Number(e.target.value)})}
+                        >
+                          {ACTIVITY_LEVELS.map(level => (
+                            <option key={level.value} value={level.value}>{level.label}</option>
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                      </div>
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                <div className="pt-8 border-t border-slate-50 space-y-8">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="text-center">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">基础代谢 (BMR)</p>
-                      <p className="text-sm font-mono font-bold text-ink">{isNaN(results.bmr) || results.bmr <= 0 ? 0 : Math.round(results.bmr)} <span className="text-[10px] font-normal text-slate-400">kcal</span></p>
+            {/* 减脂目标设定 */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 px-1">
+                <div className="w-8 h-8 rounded-lg bg-brand text-white flex items-center justify-center">
+                  <Target className="w-4 h-4" />
+                </div>
+                <h2 className="text-sm font-bold uppercase tracking-widest">减脂目标设定</h2>
+              </div>
+
+              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100">
+                <div className="max-w-2xl mx-auto space-y-10">
+                  
+                  {/* 体脂输入和参考 */}
+                  <div className="space-y-4">
+                    <div className="text-center mb-2">
+                      <p className="text-sm font-medium text-slate-600">填写体脂数据时，可参考下方体脂率视觉参考图</p>
                     </div>
-                    <div className="text-center">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">每日总消耗 (TDEE)</p>
-                      <p className="text-sm font-mono font-bold text-ink">{isNaN(results.tdee) || results.tdee <= 0 ? 0 : Math.round(results.tdee)} <span className="text-[10px] font-normal text-slate-400">kcal</span></p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+                      {/* 体脂输入字段 */}
+                      <div className="space-y-6">
+                        <InputField label="当前体脂" value={goal.currentBodyFat} unit="%" onChange={(v: number) => setGoal({...goal, currentBodyFat: v})} min={0} max={100} step="0.1" />
+                        <InputField label="目标体脂" value={goal.targetBodyFat} unit="%" onChange={(v: number) => setGoal({...goal, targetBodyFat: v})} min={0} max={100} step="0.1" />
+                      </div>
+                      
+                      {/* 体脂参考图 - 在移动端紧跟在输入字段下方，在大屏端显示在右侧 */}
+                      <div className="bg-slate-50 rounded-2xl p-4 sm:p-6 flex flex-col items-center justify-center gap-2 border border-slate-100/50">
+                        <div className="w-full flex items-center justify-center rounded-xl overflow-hidden bg-white shadow-sm border border-slate-100 cursor-pointer hover:shadow-md transition-shadow"
+                          onClick={() => {
+                            const imageSrc = userInfo.gender === 'male' ? '/body_fatrate_man.jpg' : '/body_fatrate_woman.jpg';
+                            setModalImage(imageSrc);
+                            setShowModal(true);
+                          }}
+                        >
+                          <img 
+                            src={userInfo.gender === 'male' ? '/body_fatrate_man.jpg' : '/body_fatrate_woman.jpg'}
+                            alt={`${userInfo.gender === 'male' ? '男' : '女'}性体脂参考图`}
+                            className="w-full max-h-[180px] object-contain"
+                            onError={(e) => {
+                              // Fallback to a placeholder if the specific image is missing
+                              (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${userInfo.gender === 'male' ? 'bodyfat-male' : 'bodyfat-female'}/400/500?blur=2`;
+                            }}
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                        <div className="text-center">
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">体脂率视觉参考图 ({userInfo.gender === 'male' ? '男' : '女'})</p>
+                          <p className="text-[9px] text-slate-400 mt-1">点击图片查看大图</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
+
+                  {/* 计划用时和预设 */}
+                  <div className="pt-6 border-t border-slate-50 space-y-6">
+                    <div className="space-y-4">
+                      <InputField 
+                        label="计划用时天数" 
+                        value={goal.manualDays} 
+                        unit="天" 
+                        max={999}
+                        step="1"
+                        onChange={(v: number) => {
+                          // 不设置最小值，允许为空（值为0）
+                          const num = Math.min(999, v);
+                          setGoal({...goal, manualDays: num, planLevel: 'manual'});
+                        }} 
+                      />
+                      
+                      <div className="grid grid-cols-3 gap-3">
+                        {PLAN_LEVELS.filter(p => p.id !== 'manual').map(plan => (
+                          <button
+                            key={plan.id}
+                            onClick={() => applyPlanPreset(plan.id, plan.deficit)}
+                            className={cn(
+                              "py-3 px-2 rounded-xl border transition-all shadow-sm flex flex-col items-center text-center",
+                              goal.planLevel === plan.id 
+                                ? "border-brand bg-brand/5 ring-1 ring-brand" 
+                                : "border-slate-100 bg-white hover:border-brand hover:bg-brand/5"
+                            )}
+                          >
+                            <span className={cn("text-xs font-bold", goal.planLevel === plan.id ? "text-brand" : "text-slate-600")}>{plan.label}</span>
+                            <span className={cn("text-[9px] font-normal mt-0.5 leading-tight", goal.planLevel === plan.id ? "text-brand/70" : "text-slate-400")}>{plan.comment}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-[10px] text-slate-400 text-center">点击上方按钮可根据推荐强度自动映射天数</p>
+                    </div>
+                  </div>
+
+                  {/* 提交按钮 */}
+                  <div className="pt-6 border-t border-slate-50">
+                    <button
+                      onClick={() => setCurrentPage('result')}
+                      className="w-full bg-brand hover:bg-brand/90 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>提交计算</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 页脚 */}
+            <footer className="flex flex-col md:flex-row items-center justify-between gap-6 pt-12 border-t border-slate-100">
+              <div className="flex items-center gap-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <span className="flex items-center gap-1.5"><Info className="w-3 h-3" /> 科学计算</span>
+                <span className="flex items-center gap-1.5"><Info className="w-3 h-3" /> 隐私保护</span>
+              </div>
+              <p className="text-[10px] font-medium text-slate-300">© 2026 Rock的减脂小工具</p>
+            </footer>
+          </main>
+        </motion.div>
+      )}
+
+      {/* 第二页：结果展示页 */}
+      {currentPage === 'result' && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="min-h-screen"
+        >
+          {/* 页面头部 */}
+          <header className="bg-white border-b border-slate-100 py-8">
+            <div className="max-w-4xl mx-auto px-6 text-center space-y-4">
+              <h1 className="text-3xl md:text-4xl font-bold text-ink">计算结果</h1>
+              <p className="text-slate-400 text-sm md:text-base max-w-md mx-auto">
+                根据您提供的身体数据，我们为您生成了详细的减脂计划
+              </p>
+            </div>
+          </header>
+
+          <main className="max-w-4xl mx-auto px-6 py-10 space-y-12">
+            {/* 每日热量摄入（着重展示） */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 px-1">
+                <div className="w-8 h-8 rounded-lg bg-brand text-white flex items-center justify-center">
+                  <Zap className="w-4 h-4" />
+                </div>
+                <h2 className="text-sm font-bold uppercase tracking-widest">核心数据</h2>
+              </div>
+
+              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100">
+                <div className="max-w-2xl mx-auto space-y-8">
+                  {/* 着重展示每日热量摄入 */}
+                  <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-3">每日热量摄入</p>
+                    <p className="text-4xl font-mono font-bold text-slate-800">{isNaN(results.dailyCalorieIntake) || results.dailyCalorieIntake <= 0 ? 0 : Math.round(results.dailyCalorieIntake)} <span className="text-lg font-normal text-slate-400">kcal</span></p>
+                    <p className="text-sm text-slate-600 mt-2">根据您的身体数据与减脂目标，这是达成目标体型的最佳摄入值</p>
+                  </div>
+
+                  {/* 每日热量缺口、预计用时、目标体重并列 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                      <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-2">每日热量缺口</p>
+                      <p className="text-2xl font-mono font-bold text-slate-800">-{isNaN(results.dailyDeficit) || results.dailyDeficit <= 0 ? 0 : Math.round(results.dailyDeficit)} <span className="text-sm font-normal text-slate-400">kcal</span></p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                      <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-2">预计用时</p>
+                      <p className="text-2xl font-mono font-bold text-slate-800">{isNaN(results.plannedDays) || results.plannedDays <= 0 ? 0 : results.plannedDays} <span className="text-sm font-normal text-slate-400">天</span></p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                      <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-2">目标体重</p>
+                      <p className="text-2xl font-mono font-bold text-slate-800">{isNaN(results.targetWeight) || results.targetWeight <= 0 ? 0 : results.targetWeight.toFixed(1)} <span className="text-sm font-normal text-slate-400">kg</span></p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* BMI和代谢数据 */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 px-1">
+                <div className="w-8 h-8 rounded-lg bg-blue-500 text-white flex items-center justify-center">
+                  <User className="w-4 h-4" />
+                </div>
+                <h2 className="text-sm font-bold uppercase tracking-widest">身体数据与代谢</h2>
+              </div>
+
+              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100">
+                <div className="max-w-2xl mx-auto space-y-8">
+                  {/* 基础代谢和每日总消耗 */}
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">基础代谢 (BMR)</p>
+                      <p className="text-2xl font-mono font-bold text-ink">{isNaN(results.bmr) || results.bmr <= 0 ? 0 : Math.round(results.bmr)} <span className="text-sm font-normal text-slate-400">kcal</span></p>
+                    </div>
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-100 text-center">
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">每日总消耗 (TDEE)</p>
+                      <p className="text-2xl font-mono font-bold text-ink">{isNaN(results.tdee) || results.tdee <= 0 ? 0 : Math.round(results.tdee)} <span className="text-sm font-normal text-slate-400">kcal</span></p>
+                    </div>
+                  </div>
+
+                  {/* BMI仪表盘 */}
                   <BMIGauge bmi={results.bmi} />
                 </div>
               </div>
             </div>
-          </div>
 
-          {/* Section 2: Fat Loss Goal */}
-          <div className="space-y-8">
-            <div className="flex items-center gap-3 px-1">
-              <div className="w-8 h-8 rounded-lg bg-brand text-white flex items-center justify-center">
-                <Target className="w-4 h-4" />
+            {/* 脂肪减量卡片 */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 px-1">
+                <div className="w-8 h-8 rounded-lg bg-green-500 text-white flex items-center justify-center">
+                  <Scale className="w-4 h-4" />
+                </div>
+                <h2 className="text-sm font-bold uppercase tracking-widest">脂肪减量分析</h2>
               </div>
-              <h2 className="text-sm font-bold uppercase tracking-widest">减脂目标设定</h2>
+
+              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100">
+                <div className="max-w-2xl mx-auto">
+                  <div className="p-6 bg-green-50 rounded-2xl border border-green-100">
+                    <p className="text-[10px] font-bold text-green-600 uppercase tracking-wider mb-4">预计需要减掉脂肪</p>
+                    <div className="space-y-4">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-mono font-bold text-green-600">{isNaN(results.weightToLose) || results.weightToLose <= 0 ? 0 : results.weightToLose.toFixed(1)}</span>
+                        <span className="text-sm font-medium text-green-600">kg</span>
+                      </div>
+                      <div className="space-y-2">
+                        <p className="text-sm text-green-700">约 <span className="font-mono font-bold text-green-600">{isNaN(results.totalCalorieDeficit) || results.totalCalorieDeficit <= 0 ? 0 : Math.round(results.totalCalorieDeficit)}</span> kcal</p>
+                        <p className="text-sm text-green-700 flex items-center gap-1">
+                          <span>🍔</span>
+                          相当于 <span className="font-mono font-bold text-green-600">{isNaN(results.totalCalorieDeficit) || results.totalCalorieDeficit <= 0 ? 0 : Math.round(results.totalCalorieDeficit / 250)}</span> 个汉堡
+                        </p>
+                        <p className="text-sm text-green-700 flex items-center gap-1">
+                          <span>🏃</span>
+                          或慢跑 <span className="font-mono font-bold text-green-600">{isNaN(results.totalCalorieDeficit) || results.totalCalorieDeficit <= 0 ? 0 : Math.round(results.totalCalorieDeficit / 1000 * 60)}</span> 小时
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100">
-              <div className="max-w-2xl mx-auto space-y-10">
+            {/* 整体点评 */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 px-1">
+                <div className="w-8 h-8 rounded-lg bg-brand/10 text-brand flex items-center justify-center">
+                  <Scale className="w-4 h-4" />
+                </div>
+                <h2 className="text-sm font-bold uppercase tracking-widest">整体点评</h2>
+              </div>
+
+              <div className="bg-white rounded-3xl p-6 sm:p-10 shadow-sm border border-slate-100 relative overflow-hidden">
+                <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none">
+                  <Scale className="w-48 h-48 rotate-12" />
+                </div>
                 
-                {/* Body Fat Inputs and Reference */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-                  <div className="md:col-span-1 space-y-8">
-                    <div className="space-y-6">
-                      <InputField label="当前体脂" value={goal.currentBodyFat} unit="%" onChange={(v: number) => setGoal({...goal, currentBodyFat: v})} min={0} max={100} step="0.1" />
-                      <InputField label="目标体脂" value={goal.targetBodyFat} unit="%" onChange={(v: number) => setGoal({...goal, targetBodyFat: v})} min={0} max={100} step="0.1" />
-                    </div>
-                    
-                    <div className="pt-6 border-t border-slate-50">
-                      <div className="text-center">
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">当前瘦体重</p>
-                        <p className="text-xl font-mono font-bold text-ink">{isNaN(results.leanBodyMass) || results.leanBodyMass <= 0 ? 0 : results.leanBodyMass.toFixed(1)} <span className="text-sm font-normal text-slate-400">kg</span></p>
+                <div className="max-w-3xl mx-auto relative z-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10">
+                    <div className="space-y-8">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-brand" />
+                          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">计划强度</p>
+                        </div>
+                        <p className="text-lg font-bold text-brand pl-3.5">{results.evaluation.intensity}</p>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">影响与意义</p>
+                        </div>
+                        <p className="text-sm text-slate-600 leading-relaxed pl-3.5">{results.evaluation.impact}</p>
                       </div>
                     </div>
-                    
-                    {/* 脂肪减量卡片板块 */}
-                    <div className="mt-8 p-6 bg-green-50 rounded-2xl border border-green-100">
-                      <p className="text-[10px] font-bold text-green-600 uppercase tracking-wider mb-4">预计需要减掉脂肪</p>
-                      <div className="space-y-4">
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-3xl font-mono font-bold text-green-600">{isNaN(results.weightToLose) || results.weightToLose <= 0 ? 0 : results.weightToLose.toFixed(1)}</span>
-                          <span className="text-sm font-medium text-green-600">kg</span>
+
+                    <div className="space-y-8">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
+                          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">注意事项</p>
                         </div>
-                        <div className="space-y-2">
-                          <p className="text-sm text-green-700">约 <span className="font-mono font-bold text-green-600">{isNaN(results.totalCalorieDeficit) || results.totalCalorieDeficit <= 0 ? 0 : Math.round(results.totalCalorieDeficit)}</span> kcal</p>
-                          <p className="text-sm text-green-700 flex items-center gap-1">
-                            <span>🍔</span>
-                            相当于 <span className="font-mono font-bold text-green-600">{isNaN(results.totalCalorieDeficit) || results.totalCalorieDeficit <= 0 ? 0 : Math.round(results.totalCalorieDeficit / 250)}</span> 个汉堡
-                          </p>
-                          <p className="text-sm text-green-700 flex items-center gap-1">
-                            <span>🏃</span>
-                            或慢跑 <span className="font-mono font-bold text-green-600">{isNaN(results.totalCalorieDeficit) || results.totalCalorieDeficit <= 0 ? 0 : Math.round(results.totalCalorieDeficit / 1000 * 60)}</span> 小时
+                        <p className="text-sm text-slate-600 leading-relaxed pl-3.5">{results.evaluation.notes}</p>
+                      </div>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-brand/30" />
+                          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">教练寄语</p>
+                        </div>
+                        <div className="pl-3.5 border-l-2 border-brand/10">
+                          <p className="text-sm font-medium text-ink italic leading-relaxed">
+                            “{results.evaluation.motivation}”
                           </p>
                         </div>
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 生成计划按钮 */}
+            <div className="pt-8">
+              <button
+                onClick={() => setCurrentPage('plan')}
+                className="w-full bg-brand hover:bg-brand/90 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+              >
+                <Check className="w-4 h-4" />
+                <span>生成计划</span>
+              </button>
+            </div>
+
+            {/* 修改数据按钮 */}
+            <div className="pt-4">
+              <button
+                onClick={() => setCurrentPage('input')}
+                className="w-full bg-white hover:bg-slate-50 text-brand font-bold py-4 px-6 rounded-xl transition-all shadow-sm hover:shadow-md border border-brand/30 flex items-center justify-center gap-2"
+              >
+                <ArrowRight className="w-4 h-4" />
+                <span>修改数据</span>
+              </button>
+            </div>
+
+            {/* 页脚 */}
+            <footer className="flex flex-col md:flex-row items-center justify-between gap-6 pt-12 border-t border-slate-100">
+              <div className="flex items-center gap-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <span className="flex items-center gap-1.5"><Info className="w-3 h-3" /> 科学计算</span>
+                <span className="flex items-center gap-1.5"><Info className="w-3 h-3" /> 隐私保护</span>
+              </div>
+              <p className="text-[10px] font-medium text-slate-300">© 2026 Rock的减脂小工具</p>
+            </footer>
+          </main>
+        </motion.div>
+      )}
+
+      {/* 第三页：计划页 */}
+      {currentPage === 'plan' && (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="min-h-screen"
+        >
+          {/* 页面头部 */}
+          <header className="bg-white border-b border-slate-100 py-8">
+            <div className="max-w-4xl mx-auto px-6 space-y-8">
+              <div className="text-center space-y-3">
+                <h1 className="text-3xl md:text-4xl font-bold text-ink">减脂计划</h1>
+                <p className="text-slate-400 text-sm md:text-base max-w-md mx-auto">
+                  根据您的身体数据和减脂目标，我们为您生成了详细的饮食和训练计划
+                </p>
+              </div>
+              
+              {/* 关键信息卡片 - 突出显示 */}
+              <div className="bg-gradient-to-r from-brand/10 to-brand/5 rounded-3xl p-8 border border-brand/20 shadow-sm">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                  {/* 每日总热量目标 - 最突出 */}
+                  <div className="text-center md:text-left">
+                    <p className="text-[10px] font-bold text-brand uppercase tracking-wider mb-2">每日总热量目标</p>
+                    <p className="text-5xl md:text-6xl font-mono font-bold text-brand">{isNaN(results.dailyCalorieIntake) || results.dailyCalorieIntake <= 0 ? 0 : Math.round(results.dailyCalorieIntake)} <span className="text-xl font-normal text-brand/70">kcal</span></p>
+                    <p className="text-sm text-brand/80 mt-2">这是根据您的身体数据和减脂目标计算的最佳每日热量摄入值</p>
+                  </div>
                   
-                  <div className="md:col-span-2 bg-slate-50 rounded-2xl p-6 flex flex-col items-center justify-center gap-4 border border-slate-100/50">
-                    <div className="w-full max-w-[320px] rounded-xl overflow-hidden bg-white shadow-sm border border-slate-100 cursor-pointer hover:shadow-md transition-shadow"
-                      onClick={() => {
-                        const imageSrc = userInfo.gender === 'male' ? '/body_fatrate_man.jpg' : '/body_fatrate_woman.jpg';
-                        setModalImage(imageSrc);
-                        setShowModal(true);
-                      }}
+                  {/* 预计达成目标时间 */}
+                  <div className="bg-white/80 rounded-2xl p-6 border border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-2">预计达成时间</p>
+                    <p className="text-3xl font-mono font-bold text-slate-800">{isNaN(results.plannedDays) || results.plannedDays <= 0 ? 0 : results.plannedDays} <span className="text-lg font-normal text-slate-500">天</span></p>
+                    <p className="text-sm text-slate-400 mt-2">坚持到底，你一定可以达成目标！</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <main className="max-w-4xl mx-auto px-6 py-10 space-y-12">
+            {/* 饮食计划 */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 px-1">
+                <div className="w-8 h-8 rounded-lg bg-brand text-white flex items-center justify-center">
+                  <Scale className="w-4 h-4" />
+                </div>
+                <h2 className="text-sm font-bold uppercase tracking-widest">饮食计划</h2>
+              </div>
+
+              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100">
+                <div className="max-w-2xl mx-auto space-y-6">
+                  {/* 每日三大营养素分配 - 突出显示 */}
+                  <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-4">每日三大营养素分配</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* 蛋白质 */}
+                      <div className="bg-white rounded-xl p-4 border border-slate-100 text-center">
+                        <p className="text-xs font-medium text-slate-500 mb-2">蛋白质</p>
+                        <p className="text-xl font-bold text-slate-800">{isNaN(results.dailyCalorieIntake) || results.dailyCalorieIntake <= 0 ? 0 : Math.round(results.dailyCalorieIntake * 0.275 / 4)} g</p>
+                        <p className="text-xs font-mono text-slate-400 mt-1">27.5%</p>
+                      </div>
+                      {/* 碳水化合物 */}
+                      <div className="bg-white rounded-xl p-4 border border-slate-100 text-center">
+                        <p className="text-xs font-medium text-slate-500 mb-2">碳水化合物</p>
+                        <p className="text-xl font-bold text-slate-800">{isNaN(results.dailyCalorieIntake) || results.dailyCalorieIntake <= 0 ? 0 : Math.round(results.dailyCalorieIntake * 0.45 / 4)} g</p>
+                        <p className="text-xs font-mono text-slate-400 mt-1">45%</p>
+                      </div>
+                      {/* 脂肪 */}
+                      <div className="bg-white rounded-xl p-4 border border-slate-100 text-center">
+                        <p className="text-xs font-medium text-slate-500 mb-2">脂肪</p>
+                        <p className="text-xl font-bold text-slate-800">{isNaN(results.dailyCalorieIntake) || results.dailyCalorieIntake <= 0 ? 0 : Math.round(results.dailyCalorieIntake * 0.275 / 9)} g</p>
+                        <p className="text-xs font-mono text-slate-400 mt-1">27.5%</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 查看详细饮食建议按钮 */}
+                  <div className="pt-4">
+                    <button
+                      onClick={() => setCurrentPage('dietDetails')}
+                      className="w-full bg-brand hover:bg-brand/90 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
                     >
-                      <img 
-                        src={userInfo.gender === 'male' ? '/body_fatrate_man.jpg' : '/body_fatrate_woman.jpg'}
-                        alt={`${userInfo.gender === 'male' ? '男' : '女'}性体脂参考图`}
-                        className="w-full h-auto block"
-                        onError={(e) => {
-                          // Fallback to a placeholder if the specific image is missing
-                          (e.target as HTMLImageElement).src = `https://picsum.photos/seed/${userInfo.gender === 'male' ? 'bodyfat-male' : 'bodyfat-female'}/400/500?blur=2`;
-                        }}
-                        referrerPolicy="no-referrer"
-                      />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">体脂率视觉参考图 ({userInfo.gender === 'male' ? '男' : '女'})</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Duration and Presets */}
-                <div className="pt-10 border-t border-slate-50 space-y-6">
-                  <div className="space-y-4">
-                    <InputField 
-                      label="计划用时天数" 
-                      value={goal.manualDays} 
-                      unit="天" 
-                      max={999}
-                      step="1"
-                      onChange={(v: number) => {
-                        // 不设置最小值，允许为空（值为0）
-                        const num = Math.min(999, v);
-                        setGoal({...goal, manualDays: num, planLevel: 'manual'});
-                      }} 
-                    />
-                    
-                    <div className="grid grid-cols-3 gap-3">
-                      {PLAN_LEVELS.filter(p => p.id !== 'manual').map(plan => (
-                        <button
-                          key={plan.id}
-                          onClick={() => applyPlanPreset(plan.id, plan.deficit)}
-                          className={cn(
-                            "py-3 px-2 rounded-xl border transition-all shadow-sm flex flex-col items-center text-center",
-                            goal.planLevel === plan.id 
-                              ? "border-brand bg-brand/5 ring-1 ring-brand" 
-                              : "border-slate-100 bg-white hover:border-brand hover:bg-brand/5"
-                          )}
-                        >
-                          <span className={cn("text-xs font-bold", goal.planLevel === plan.id ? "text-brand" : "text-slate-600")}>{plan.label}</span>
-                          <span className={cn("text-[9px] font-normal mt-0.5 leading-tight", goal.planLevel === plan.id ? "text-brand/70" : "text-slate-400")}>{plan.comment}</span>
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-[10px] text-slate-400 text-center">点击上方按钮可根据推荐强度自动映射天数</p>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Overall Review Summary */}
-        <div className="space-y-8">
-          <div className="flex items-center gap-3 px-1">
-            <div className="w-8 h-8 rounded-lg bg-brand/10 text-brand flex items-center justify-center">
-              <Scale className="w-4 h-4" />
-            </div>
-            <h2 className="text-sm font-bold uppercase tracking-widest">整体点评</h2>
-          </div>
-
-          <div className="bg-white rounded-3xl p-10 border border-slate-100 shadow-sm relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none">
-              <Scale className="w-48 h-48 rotate-12" />
-            </div>
-            
-            <div className="max-w-3xl mx-auto relative z-10">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10">
-                <div className="space-y-8">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-brand" />
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">计划强度</p>
-                    </div>
-                    <p className="text-lg font-bold text-brand pl-3.5">{results.evaluation.intensity}</p>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">影响与意义</p>
-                    </div>
-                    <p className="text-sm text-slate-600 leading-relaxed pl-3.5">{results.evaluation.impact}</p>
-                  </div>
-                </div>
-
-                <div className="space-y-8">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-slate-300" />
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">注意事项</p>
-                    </div>
-                    <p className="text-sm text-slate-600 leading-relaxed pl-3.5">{results.evaluation.notes}</p>
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-brand/30" />
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">教练寄语</p>
-                    </div>
-                    <div className="pl-3.5 border-l-2 border-brand/10">
-                      <p className="text-sm font-medium text-ink italic leading-relaxed">
-                        “{results.evaluation.motivation}”
-                      </p>
-                    </div>
+                      <Info className="w-4 h-4" />
+                      <span>查看详细饮食建议</span>
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        {/* Minimal Footer Info */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6 pt-12 border-t border-slate-100">
-          <div className="flex items-center gap-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-            <span className="flex items-center gap-1.5"><Info className="w-3 h-3" /> 科学计算</span>
-            <span className="flex items-center gap-1.5"><Info className="w-3 h-3" /> 隐私保护</span>
-          </div>
-          <p className="text-[10px] font-medium text-slate-300">© 2026 Rock的减脂小工具</p>
-        </div>
-      </main>
+            {/* 训练计划 */}
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 px-1">
+                <div className="w-8 h-8 rounded-lg bg-brand text-white flex items-center justify-center">
+                  <Zap className="w-4 h-4" />
+                </div>
+                <h2 className="text-sm font-bold uppercase tracking-widest">训练计划</h2>
+              </div>
+
+              <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-100">
+                <div className="max-w-2xl mx-auto space-y-6">
+                  {/* 训练建议 - 突出显示 */}
+                  <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                    <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-4">训练建议</p>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm font-medium text-slate-600">训练类型</p>
+                        <p className="text-sm font-mono font-bold text-slate-800">有氧运动 + 力量训练</p>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm font-medium text-slate-600">建议时长</p>
+                        <p className="text-sm font-mono font-bold text-slate-800">每周 4-5 次，每次 45-60 分钟</p>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm font-medium text-slate-600">强度</p>
+                        <p className="text-sm font-mono font-bold text-slate-800">中等强度</p>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <p className="text-sm font-medium text-slate-600">预计运动消耗</p>
+                        <p className="text-sm font-mono font-bold text-slate-800">每次 300-400 kcal</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 查看详细训练指导按钮 */}
+                  <div className="pt-4">
+                    <button
+                      onClick={() => setCurrentPage('workoutDetails')}
+                      className="w-full bg-brand hover:bg-brand/90 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                    >
+                      <Info className="w-4 h-4" />
+                      <span>查看详细训练指导</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 下一步引导按钮 */}
+            <div className="pt-8">
+              <button
+                className="w-full bg-brand hover:bg-brand/90 text-white font-bold py-4 px-6 rounded-xl transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+              >
+                <Zap className="w-4 h-4" />
+                <span>开始你的减脂旅程</span>
+              </button>
+            </div>
+
+            {/* 返回结果页按钮 */}
+            <div className="pt-4">
+              <button
+                onClick={() => setCurrentPage('result')}
+                className="w-full bg-white hover:bg-slate-50 text-brand font-bold py-4 px-6 rounded-xl transition-all shadow-sm hover:shadow-md border border-brand/30 flex items-center justify-center gap-2"
+              >
+                <ArrowRight className="w-4 h-4" />
+                <span>返回结果页</span>
+              </button>
+            </div>
+
+            {/* 免责声明 */}
+            <div className="pt-8">
+              <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                <p className="text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-3">免责声明</p>
+                <p className="text-sm text-slate-400 leading-relaxed">
+                  本计算器提供科学参考，具体计划请咨询专业医生或教练。
+                  每个人的身体状况不同，减脂计划应根据个人情况进行调整。
+                  在开始任何新的饮食或训练计划前，请咨询专业人士的意见。
+                </p>
+              </div>
+            </div>
+
+            {/* 页脚 */}
+            <footer className="flex flex-col md:flex-row items-center justify-between gap-6 pt-12 border-t border-slate-100">
+              <div className="flex items-center gap-6 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                <span className="flex items-center gap-1.5"><Info className="w-3 h-3" /> 科学计算</span>
+                <span className="flex items-center gap-1.5"><Info className="w-3 h-3" /> 隐私保护</span>
+              </div>
+              <p className="text-[10px] font-medium text-slate-300">© 2026 Rock的减脂小工具</p>
+            </footer>
+          </main>
+        </motion.div>
+      )}
+
+      {/* 第四页：饮食详情页 */}
+      {currentPage === 'dietDetails' && (
+        <DietDetailsPage 
+          results={results}
+          onBack={() => setCurrentPage('plan')}
+        />
+      )}
+
+      {/* 第五页：训练详情页 */}
+      {currentPage === 'workoutDetails' && (
+        <WorkoutDetailsPage 
+          results={results}
+          onBack={() => setCurrentPage('plan')}
+        />
+      )}
     </div>
   );
 }
